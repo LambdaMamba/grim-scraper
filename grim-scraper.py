@@ -76,7 +76,7 @@ def reap(driver, urls, url_root_domain, logs):
             domain_path = domain + only_path
 
             if file_name == "":
-                file_name = str(i)
+                file_name = "index"
                 i = i+1
 
             scrape_dir = url_root_domain +"/"+ domain_path

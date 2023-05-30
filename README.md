@@ -3,6 +3,7 @@
 A Selenium Python Scraper for Scraping websites, and downloading their resources.
 
 Usage:
+
 `python3 grim-scraper.py --url https://github.com/login`
 
 First, it will visit `https://github.com/login` using Selenium, and a screenshot of the site will be saved in `github.com/screenshot.png`.
@@ -13,10 +14,12 @@ Third, it will visit all the URLs found in the HTTP requests and responses. The 
 
 
 Running in headless mode:
+
 `python3 grim-scraper.py --url https://github.com/login -headless`
 
 
 Output the logs:
+
 `python3 grim-scraper.py --url https://github.com/login -log`
 
 Example output with `-log` option enabled:
