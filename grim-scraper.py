@@ -77,20 +77,31 @@ def reap(driver, urls, url_root_domain, logs):
 
             if file_name == "":
                 file_name = "index"
-                i = i+1
 
             scrape_dir = url_root_domain +"/"+ domain_path
             full_path = scrape_dir + file_name
-
-            Path(scrape_dir).mkdir(parents=True, exist_ok=True)
-            f = open(full_path, "w")
-            f.write(src)
-            f.close()
-            if logs:
-                print("Saved " + url + " in " + full_path)
-
+            try:
+                Path(scrape_dir).mkdir(parents=True, exist_ok=True)
+                f = open(full_path, "w")
+                f.write(src)
+                f.close()
+                if logs:
+                    print("Saved " + url + " in " + full_path)
+            except OSError as e:
+                short = file_name[0:20]
+                scrape_dir = url_root_domain +"/"+ domain_path
+                full_path = scrape_dir + short
+                Path(scrape_dir).mkdir(parents=True, exist_ok=True)
+                f = open(full_path, "w")
+                f.write(src)
+                f.close()
+                if logs:
+                    print("File name too long, changed name to ", short)
+                    print("Saved " + url + " in " + full_path)
         print("Saved the resources successfully in "+ url_root_domain)
+
     except Exception as e:
+        print(e)
         print("Error saving the resources... exiting")
         sys.exit()
 
