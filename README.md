@@ -1,50 +1,50 @@
-#　The Grim Scraper
+# The Grim Scraper
 
 A Selenium Python Scraper for Scraping websites, and downloading their resources.
 
-##　Example usage:
+## Example usage:
 
 `python3 grim-scraper.py --url https://github.com/login`
 
--First, it will visit `https://github.com/login` using Selenium, and a screenshot of the site will be saved in `github.com/screenshot.png`.
+- First, it will visit `https://github.com/login` using Selenium, and a screenshot of the site will be saved in `github.com/screenshot.png`.
 
--Second, it will check the HTTP requests and responses, and will save the `URL HTTP-Status-Code Content-Type` information in `github.com/http_responses.csv`.
+- Second, it will check the HTTP requests and responses, and will save the `URL HTTP-Status-Code Content-Type` information in `github.com/http_responses.csv`.
 
--Third, it will visit the URLs found in the HTTP requests and responses. The source codes will be saved in their respective folders and file names.
+- Third, it will visit the URLs found in the HTTP requests and responses. The source codes will be saved in their respective folders and file names.
 
 
-##　Running in headless mode (`-headless` flag):
+## Running in headless mode (`-headless` flag):
 
 `python3 grim-scraper.py --url https://github.com/login -headless`
 
 
-##　Output the logs (`-log` flag):
+## Output the logs (`-log` flag):
 
 `python3 grim-scraper.py --url https://github.com/login -log`
 
 
-##　Specify resource filetype to save (Use `--filetype` to specify):
+## Specify resource filetype to save (Use `--filetype` to specify):
 
 `python3 grim-scraper.py --url https://github.com/login --filetype html`
 
-##　Download all resources found in HTTP response/request (`-all` flag):
+## Download all resources found in HTTP response/request (`-all` flag):
 
 `python3 grim-scraper.py --url https://github.com/login -all`
 
 (Without `-all` flag, it will only save resources found under `github.com`)
 
 
-##　Specify the user agent (Use `--usergent` to specify):
+## Specify the user agent (Use `--usergent` to specify):
 
 `python3 grim-scraper.py --url https://github.com/login --useragent "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36"`
 
-##　Bypass Javascript pop up alerts (`-alert` flag):
+## Bypass Javascript pop up alerts (`-alert` flag):
 
 `python3 grim-scraper.py --url https://github.com/login -alert"`
 
 
 
-##　Example output with `-log` option enabled:
+## Example output with `-log` option enabled:
 
 ```
 URL HTTP-Status-Code Content-Type
