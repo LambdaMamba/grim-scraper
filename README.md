@@ -13,6 +13,11 @@ python3 grim-scraper.py --url https://github.com/login
 
 - Third, it will visit the URLs found in the HTTP requests and responses. The source codes will be saved in their respective folders and file names.
 
+**Use URLs from a file (Use `--url` option, and specify the list file name)**
+```
+python3 grim-scraper.py --url urls.txt
+```
+
 **Specify resource filetype to save (Use `--filetype` to specify):**
 ```
 python3 grim-scraper.py --url https://github.com/login --filetype html

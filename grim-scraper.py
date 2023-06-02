@@ -219,9 +219,14 @@ def check_args():
 
     if checkers.is_url(url) == True:
         print("Valid URL, continuing...")
+        txt = False
     elif checkers.is_url(url) == False:
-        print("Invalid URL, exiting...")
-        sys.exit()
+        if os.path.isfile(url):
+            print("Will use the URLs inside "+url+"...")
+            txt = True
+        else:
+            print("Invalid URL, exiting...")
+            sys.exit()
 
     if args.filetype:
         filetype = args.filetype
@@ -279,7 +284,7 @@ def check_args():
         alert = False
 
 
-    return url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time
+    return url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt
 
 
 
@@ -299,10 +304,24 @@ def check_dir(root_domain):
     print("Made a directory " +new_dir)
     return new_dir
 
-def main():
-    try:
-        url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time = check_args()
 
+def read_txt(filename):
+    url_txt = []
+    txt_file = open(filename, 'r')
+    Lines = txt_file.readlines()
+    for line in Lines:
+        noline = line.replace("\n", "")
+        if checkers.is_url(noline) == True:
+            print(noline+" is a valid URL...")
+            url_txt.append(noline)
+        else:
+            print(noline+" is an invalid URL, skipping...")
+    return url_txt
+
+
+
+def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt):
+    try:
         root_domain = extract_root_domain(url)
         url_root_domain = root_domain
         urls = []
@@ -317,19 +336,48 @@ def main():
         #If -alert is enabled, check for Javascript popup alert
         if alert:
             check_alerts(driver)
-    
+
         take_screenshot(driver, url, root_domain)
 
         urls, urls_filetype = http_responses(driver, url, root_domain, logs)
 
         reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filetype, alert, download_dir, wait_time, root_domain)
 
+        driver.close()
+        return True
+    except Exception as e:
+        print(e)
+        print("Error for URL " + url)
+        driver.close()
+        return False
+
+
+def main():
+    try:
+        url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt = check_args()
+
+        if txt:
+            url_txt = []
+            url_txt = read_txt(url)
+            #If reading URLs from a file, perform the scraping for each URL
+            for urll in url_txt:
+                success = grim(urll, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt)
+                if success:
+                    print("Success for " + urll)
+                else:
+                    print("Fail for " + urll)
+
+        else:
+            #If only a single URL is provided, perform scraping once
+            success = grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt)
+            if success:
+                print("Success for " + url)
+            else:
+                print("Fail for " + url)
+
     except Exception as e:
         print(e)
         print("Error... exiting")
         sys.exit()
-
-    driver.close()
-
 
 main()
