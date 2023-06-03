@@ -13,6 +13,28 @@ python3 grim-scraper.py --url https://github.com/login
 
 - Third, it will visit the URLs found in the HTTP requests and responses. The source codes will be saved in their respective folders and file names.
 
+## Arguments, options and flags:
+
+```
+usage: grim-scraper.py [-h] --url URL [--filetype FILETYPE] [--useragent USERAGENT] [--time TIME]
+                       [--status STATUS] [-headless] [-log] [-all] [-alert]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --url URL             Specify the URL
+  --filetype FILETYPE   Specify the resource filetype to save
+  --useragent USERAGENT
+                        Specify the user agent. Default is 'Mozilla/5.0 (X11; Linux x86_64)
+                        AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
+  --time TIME           Seconds to wait for page to load. Default is 10 seconds
+  --status STATUS       Specify status code of main page. Do not scrape if main page does not match
+                        this status code.
+  -headless             Run in headless mode
+  -log                  Output logs
+  -all                  Save all resources found in HTTP request/response
+  -alert                Accept pop up alert
+```
+
 **Use URLs from a file (Use `--url` option, and specify the list file name)**
 ```
 python3 grim-scraper.py --url urls.txt

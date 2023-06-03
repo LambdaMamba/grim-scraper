@@ -27,7 +27,7 @@ def check_alerts(driver):
         alerts = driver.switch_to.alert
         #Accept the alert
         alerts.accept()
-        print("Alert dismissed...")
+        print("Alert accepted...")
     except TimeoutException:
         print("No alert found...")
             
@@ -134,8 +134,8 @@ def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filet
             #If --filetype is specified, get the file type from the HTTP request/response for the URL
             if ( (filetype_str.find(filetype) == -1) and (filetype != "*")):
                 continue
+            driver.set_page_load_timeout(wait_time)
             driver.get(url)
-            time.sleep(wait_time)
             if alert:
                 check_alerts(driver)
             src = driver.page_source
@@ -209,7 +209,7 @@ def check_args():
     parser.add_argument('--url', required=True, help="Specify the URL")
     parser.add_argument('--filetype', required=False, help="Specify the resource filetype to save")
     parser.add_argument('--useragent', required=False, help="Specify the user agent. Default is 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'")
-    parser.add_argument('--time', required=False, help="Seconds to wait for page to load. Default is 2 seconds")
+    parser.add_argument('--time', required=False, help="Seconds to wait for page to load. Default is 10 seconds")
     parser.add_argument('--status', required=False, help="Specify status code of main page. Do not scrape if main page does not match this status code.")
     parser.add_argument('-headless', action='store_true', help="Run in headless mode")
     parser.add_argument('-log', action='store_true', help="Output logs")
@@ -255,7 +255,7 @@ def check_args():
         wait_time = float(args.time)
         print("Will wait "+str(wait_time)+" seconds for pages to load...")
     else:
-        wait_time = 2
+        wait_time = 10
     
 
     if args.headless:
@@ -348,9 +348,9 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
         root_domain = check_dir(root_domain)
 
         driver, download_dir = initialize_driver(headless_mode, useragent, root_domain)
+        driver.set_page_load_timeout(wait_time)
         driver.get(url)
         r = requests.get(url) 
-        time.sleep(wait_time)
 
         print("Status code of " +url+ " is " + str(r.status_code))
 
