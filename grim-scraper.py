@@ -210,6 +210,7 @@ def check_args():
     parser.add_argument('--filetype', required=False, help="Specify the resource filetype to save")
     parser.add_argument('--useragent', required=False, help="Specify the user agent. Default is 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'")
     parser.add_argument('--time', required=False, help="Seconds to wait for page to load. Default is 2 seconds")
+    parser.add_argument('--status', required=False, help="Specify status code of main page. Do not scrape if main page does not match this status code.")
     parser.add_argument('-headless', action='store_true', help="Run in headless mode")
     parser.add_argument('-log', action='store_true', help="Output logs")
     parser.add_argument('-all', action='store_true', help="Save all resources found in HTTP request/response")
@@ -227,6 +228,13 @@ def check_args():
         else:
             print("Invalid URL, exiting...")
             sys.exit()
+
+    if args.status:
+        statuscode = args.status
+        print("Will only scrape if main page has status code " + statuscode + "...")
+    else:
+        statuscode = "*"
+        #print("Will scrape main page regardless of status code...")
 
     if args.filetype:
         filetype = args.filetype
@@ -284,7 +292,7 @@ def check_args():
         alert = False
 
 
-    return url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt
+    return url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode
 
 
 
@@ -304,6 +312,16 @@ def check_dir(root_domain):
     print("Made a directory " +new_dir)
     return new_dir
 
+def rm_dir(root_domain):
+    try:
+        if os.path.isdir:
+            os.rmdir(root_domain)
+        return True
+    except Exception as e:
+        print(e)
+        print("Error removing "+ root_domain)
+        return False
+
 
 def read_txt(filename):
     url_txt = []
@@ -320,7 +338,7 @@ def read_txt(filename):
 
 
 
-def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt):
+def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode):
     try:
         root_domain = extract_root_domain(url)
         url_root_domain = root_domain
@@ -331,20 +349,31 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
 
         driver, download_dir = initialize_driver(headless_mode, useragent, root_domain)
         driver.get(url)
+        r = requests.get(url) 
         time.sleep(wait_time)
 
-        #If -alert is enabled, check for Javascript popup alert
-        if alert:
-            check_alerts(driver)
+        print("Status code of " +url+ " is " + str(r.status_code))
 
-        take_screenshot(driver, url, root_domain)
+        #Only scrape if status code matches the specified status code. If it doesn't match, remove the directory and quit.
+        if (statuscode != "*") and (str(r.status_code) != str(statuscode)):
+            print("Status code of " +url+ " does not match "  + str(r.status_code) + " removing " + root_domain + " directory and quitting...")
+            rm = rm_dir(root_domain)
+            driver.close()
+            return False
+        
+        else:
+            #If -alert is enabled, check for Javascript popup alert
+            if alert:
+                check_alerts(driver)
 
-        urls, urls_filetype = http_responses(driver, url, root_domain, logs)
+            take_screenshot(driver, url, root_domain)
 
-        reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filetype, alert, download_dir, wait_time, root_domain)
+            urls, urls_filetype = http_responses(driver, url, root_domain, logs)
 
-        driver.close()
-        return True
+            reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filetype, alert, download_dir, wait_time, root_domain)
+
+            driver.close()
+            return True
     except Exception as e:
         print(e)
         print("Error for URL " + url)
@@ -354,14 +383,14 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
 
 def main():
     try:
-        url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt = check_args()
+        url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode = check_args()
 
         if txt:
             url_txt = []
             url_txt = read_txt(url)
             #If reading URLs from a file, perform the scraping for each URL
             for urll in url_txt:
-                success = grim(urll, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt)
+                success = grim(urll, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode)
                 if success:
                     print("Success for " + urll)
                 else:
@@ -369,7 +398,7 @@ def main():
 
         else:
             #If only a single URL is provided, perform scraping once
-            success = grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt)
+            success = grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode)
             if success:
                 print("Success for " + url)
             else:

@@ -32,6 +32,10 @@ python3 grim-scraper.py --url https://github.com/login --useragent "Mozilla/5.0 
 ```
 python3 grim-scraper.py --url https://github.com/login --time 1
 ```
+**Specify HTTP status code (`--status` flag, will only scrape if main page matches this status code):**
+```
+python3 grim-scraper.py --url https://github.com/login --status 200
+```
 
 **Running in headless mode (`-headless` flag):**
 ```
