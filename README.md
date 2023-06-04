@@ -17,7 +17,8 @@ python3 grim-scraper.py --url https://github.com/login
 
 ```
 usage: grim-scraper.py [-h] --url URL [--filetype FILETYPE] [--useragent USERAGENT] [--time TIME]
-                       [--status STATUS] [-headless] [-log] [-all] [-alert]
+                       [--status STATUS] [--proxy PROXY] [--proxycred PROXYCRED] [-headless] [-log]
+                       [-all] [-alert]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -29,6 +30,9 @@ optional arguments:
   --time TIME           Seconds to wait for page to load. Default is 10 seconds
   --status STATUS       Specify status code of main page. Do not scrape if main page does not match
                         this status code.
+  --proxy PROXY         Specify proxy PROXY:PORT
+  --proxycred PROXYCRED
+                        Specify proxy credentials USER:PASS
   -headless             Run in headless mode
   -log                  Output logs
   -all                  Save all resources found in HTTP request/response
@@ -50,26 +54,30 @@ python3 grim-scraper.py --url https://github.com/login --filetype html
 python3 grim-scraper.py --url https://github.com/login --useragent "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36"
 ```
 
-**Specify wait time (`--time` flag):**
+**Specify wait time (Use `--time` to specify):**
 ```
 python3 grim-scraper.py --url https://github.com/login --time 1
 ```
-**Specify HTTP status code (`--status` flag, will only scrape if main page matches this status code):**
+**Specify HTTP status code (Use `--status` to specify, will only scrape if main page matches this status code):**
 ```
 python3 grim-scraper.py --url https://github.com/login --status 200
 ```
-
+**Specify proxy (Use `--proxy` to specify, format: `PROXY:PORT`):**
+```
+python3 grim-scraper.py --url https://github.com/login --proxy 123.123.123.123:8080
+```
+**Specify proxy username and password (Use `--proxycred` to specify, format: `USER:PASS`):**
+```
+python3 grim-scraper.py --url https://github.com/login --proxy 123.123.123.123:8080 --proxycred admin:admin
+```
 **Running in headless mode (`-headless` flag):**
 ```
 python3 grim-scraper.py --url https://github.com/login -headless
 ```
-
-
 **Output the logs (`-log` flag):**
 ```
 python3 grim-scraper.py --url https://github.com/login -log
 ```
-
 
 **Download all resources found in HTTP response/request (`-all` flag):**
 ```

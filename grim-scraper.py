@@ -43,24 +43,52 @@ def extract_root_domain(url):
     return top
 
 
-def initialize_driver(headless_mode, useragent, root_domain):
-    options = webdriver.ChromeOptions()
-    path = os.path.dirname(os.path.abspath(__file__))
-    #Download files inside the /root_domain/downloads
-    download_dir = path+"/"+root_domain+"/downloads"
-    #Use these preferences to bypass the "This Type of File Can Harm Your Computer" alert, and download the files
-    prefs = {
-    "download.default_directory" : download_dir,
-    'safebrowsing.enabled': True
-    }      
-    options.add_experimental_option("prefs", prefs)
+def initialize_driver(headless_mode, useragent, root_domain, proxy, proxycred):
+    try:
+        options = webdriver.ChromeOptions()
+        path = os.path.dirname(os.path.abspath(__file__))
+        #Download files inside the /root_domain/downloads
+        download_dir = path+"/"+root_domain+"/downloads"
+        #Use these preferences to bypass the "This Type of File Can Harm Your Computer" alert, and download the files
+        prefs = {
+        "download.default_directory" : download_dir,
+        'safebrowsing.enabled': True
+        }      
+        options.add_experimental_option("prefs", prefs)
 
-    options.add_argument("user-agent="+useragent)
-    options.headless = headless_mode
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
-    print("Driver has been initialized")
-    return driver, download_dir
+        options.add_argument("user-agent="+useragent)
 
+        #options.add_argument('--proxy-server='+str(proxy))
+        options.headless = headless_mode
+
+        #If proxy is set, set these options in selenium-wire
+        if proxy != "":
+            if (proxycred != ""):
+                seleniumwire_options = {
+                    'proxy': {
+                        'http': f'http://{proxycred}@{proxy}',
+                        'https': f'https://{proxycred}@{proxy}',
+                    },
+                }
+            else:
+                #If no username and password is provided
+                seleniumwire_options = {
+                    'proxy': {
+                        'http': f'http://{proxy}',
+                        'https': f'https://{proxy}',
+                    },
+                } 
+            
+            driver = webdriver.Chrome(ChromeDriverManager().install(), options=options, seleniumwire_options=seleniumwire_options)
+        else:
+            driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+        print("Driver has been initialized")
+        return driver, download_dir
+
+    except Exception as e:
+        print(e)
+        print("Error initializing driver...")
+        return False, False
 
 def take_screenshot(driver, url, root_domain):
     #Take screenshot and save it in /root_domain/screenshot.png
@@ -211,6 +239,8 @@ def check_args():
     parser.add_argument('--useragent', required=False, help="Specify the user agent. Default is 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'")
     parser.add_argument('--time', required=False, help="Seconds to wait for page to load. Default is 10 seconds")
     parser.add_argument('--status', required=False, help="Specify status code of main page. Do not scrape if main page does not match this status code.")
+    parser.add_argument('--proxy', required=False, help="Specify proxy PROXY:PORT")
+    parser.add_argument('--proxycred', required=False, help="Specify proxy credentials USER:PASS")
     parser.add_argument('-headless', action='store_true', help="Run in headless mode")
     parser.add_argument('-log', action='store_true', help="Output logs")
     parser.add_argument('-all', action='store_true', help="Save all resources found in HTTP request/response")
@@ -235,6 +265,22 @@ def check_args():
     else:
         statuscode = "*"
         #print("Will scrape main page regardless of status code...")
+    
+    if args.proxy:
+        proxy = args.proxy
+        if args.proxycred:
+            proxycred = args.proxycred
+        else:
+            proxycred = ""
+    else:
+        proxy = ""
+        proxycred = ""
+
+    if (args.proxycred) and (proxy == ""):
+        print("Please specify proxy before specifying credentials!! Exiting...")
+        sys.exit()
+
+
 
     if args.filetype:
         filetype = args.filetype
@@ -292,7 +338,7 @@ def check_args():
         alert = False
 
 
-    return url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode
+    return url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred
 
 
 
@@ -338,7 +384,7 @@ def read_txt(filename):
 
 
 
-def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode):
+def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred):
     try:
         root_domain = extract_root_domain(url)
         url_root_domain = root_domain
@@ -347,7 +393,10 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
         #This will be the working directory
         root_domain = check_dir(root_domain)
 
-        driver, download_dir = initialize_driver(headless_mode, useragent, root_domain)
+        driver, download_dir = initialize_driver(headless_mode, useragent, root_domain, proxy, proxycred)
+        if (driver == False):
+            print("Due to error in driver initialization, exiting...")
+            return False
         driver.set_page_load_timeout(wait_time)
         driver.get(url)
         r = requests.get(url) 
@@ -374,6 +423,10 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
 
             driver.close()
             return True
+    except TimeoutException as e:
+        print("Timed out loading. Try setting a longer time using --time")
+        driver.close()
+        return False
     except Exception as e:
         print(e)
         print("Error for URL " + url)
@@ -383,14 +436,14 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
 
 def main():
     try:
-        url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode = check_args()
+        url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred = check_args()
 
         if txt:
             url_txt = []
             url_txt = read_txt(url)
             #If reading URLs from a file, perform the scraping for each URL
             for urll in url_txt:
-                success = grim(urll, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode)
+                success = grim(urll, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred)
                 if success:
                     print("Success for " + urll)
                 else:
@@ -398,7 +451,7 @@ def main():
 
         else:
             #If only a single URL is provided, perform scraping once
-            success = grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode)
+            success = grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred)
             if success:
                 print("Success for " + url)
             else:
