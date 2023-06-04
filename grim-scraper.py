@@ -30,7 +30,22 @@ def check_alerts(driver):
         print("Alert accepted...")
     except TimeoutException:
         print("No alert found...")
-            
+
+
+def dismiss_alert(driver):
+    try:
+        #Wait unti a Javascript pop up alert shows up
+        WebDriverWait(driver, 1).until(EC.alert_is_present(),'Timed out')
+        if (EC.alert_is_present()):
+            print("Alert has showed up...")
+            alerts = driver.switch_to.alert
+            #dismiss the alert
+            alerts.dismiss()
+            print("Alert dismissed...")
+            return True
+    except TimeoutException:
+        return False
+
 
 
 def extract_root_domain(url):
@@ -164,6 +179,7 @@ def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filet
                 continue
             driver.set_page_load_timeout(wait_time)
             driver.get(url)
+            dismiss_alert(driver)
             if alert:
                 check_alerts(driver)
             src = driver.page_source
@@ -390,6 +406,7 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
         url_root_domain = root_domain
         urls = []
         urls_filetype = {}
+        responses = 0
         #This will be the working directory
         root_domain = check_dir(root_domain)
 
@@ -399,13 +416,24 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
             return False
         driver.set_page_load_timeout(wait_time)
         driver.get(url)
-        r = requests.get(url) 
 
-        print("Status code of " +url+ " is " + str(r.status_code))
+        #Dismiss alerts if found by default. Will not dismiss if -alert is set
+        if not alert:
+            res = dismiss_alert(driver)
+
+        #Find the status code of the main page
+        for request in driver.requests:
+            if request.response:
+                if (request.url == url) or (request.url == url+"/"):
+                    responses = request.response.status_code
+                    break
+        
+
+        print("Status code of " +url+ " is " + str(responses))
 
         #Only scrape if status code matches the specified status code. If it doesn't match, remove the directory and quit.
-        if (statuscode != "*") and (str(r.status_code) != str(statuscode)):
-            print("Status code of " +url+ " does not match "  + str(r.status_code) + " removing " + root_domain + " directory and quitting...")
+        if (statuscode != "*") and (str(responses) != str(statuscode)):
+            print("Status code of " +url+ " does not match "  + str(statuscode) + " removing " + root_domain + " directory and quitting...")
             rm = rm_dir(root_domain)
             driver.close()
             return False
