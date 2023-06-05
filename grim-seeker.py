@@ -5,6 +5,9 @@ import urllib.request
 import re
 import base64
 import argparse
+import html
+
+import urllib
 
 def href(file_name, page_string):
     soup = BeautifulSoup(page_string, "html.parser")
@@ -67,6 +70,19 @@ def verify_b64(decoded):
     else:
         return True
 
+def unesc(file_name, page_string):
+    unescc = re.findall(r'(?i)unescape\(([^)]+)\)', page_string)
+    if unescc:
+        print("unescape() detected inside "+file_name)
+        for word in unescc:
+            string = word.strip("unescape(")
+            string = string.strip(")")
+            string = string.strip("'")
+            string = string.strip('"')
+            unescaped = html.unescape(string)
+            percentdec = urllib.parse.unquote(unescaped)
+            print("The unescaped and percent decoded text: \n"+percentdec)
+
 def seek(file_name):
     try:
         #print("********* Running grim-seeker *********")
@@ -80,6 +96,7 @@ def seek(file_name):
         sq_list = singlequote(file_name, page_string)
         words = dq_list + sq_list
         href(file_name, page_string)
+        unesc(file_name, page_string)
         php(file_name, page_string, words)
         apk(file_name, page_string, words)
         b64(file_name, page_string, words)
