@@ -253,7 +253,7 @@ def check_args():
     parser.add_argument('--url', required=True, help="Specify the URL")
     parser.add_argument('--filetype', required=False, help="Specify the resource filetype to save")
     parser.add_argument('--useragent', required=False, help="Specify the user agent. Default is 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'")
-    parser.add_argument('--time', required=False, help="Seconds to wait for page to load. Default is 10 seconds")
+    parser.add_argument('--time', required=False, help="Seconds to wait for page to load. Default is 30 seconds")
     parser.add_argument('--status', required=False, help="Specify status code of main page. Do not scrape if main page does not match this status code.")
     parser.add_argument('--proxy', required=False, help="Specify proxy PROXY:PORT")
     parser.add_argument('--proxycred', required=False, help="Specify proxy credentials USER:PASS")
@@ -317,7 +317,8 @@ def check_args():
         wait_time = float(args.time)
         print("Will wait "+str(wait_time)+" seconds for pages to load...")
     else:
-        wait_time = 10
+        #Default wait time is 30 seconds
+        wait_time = 30
     
 
     if args.headless:
@@ -439,7 +440,7 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
             return False
         
         else:
-            #If -alert is enabled, check for Javascript popup alert
+            #If -alert is enabled, check for Javascript popup alert and accept
             if alert:
                 check_alerts(driver)
 

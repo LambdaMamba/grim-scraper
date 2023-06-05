@@ -27,7 +27,7 @@ optional arguments:
   --useragent USERAGENT
                         Specify the user agent. Default is 'Mozilla/5.0 (X11; Linux x86_64)
                         AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
-  --time TIME           Seconds to wait for page to load. Default is 10 seconds
+  --time TIME           Seconds to wait for page to load. Default is 30 seconds
   --status STATUS       Specify status code of main page. Do not scrape if main page does not match
                         this status code.
   --proxy PROXY         Specify proxy PROXY:PORT
