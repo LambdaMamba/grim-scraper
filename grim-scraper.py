@@ -168,11 +168,10 @@ def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filet
         for url in urls:
             i=0
             j=0
-
-            domain = extract_root_domain(url)
+            domainn = extract_root_domain(url)
             filetype_str = str(urls_filetype[url])
-            #If -all not enabled, only reap resources under root domain
-            if ((not all_resource) and (domain != url_root_domain)):
+            #If -all not enabled, only reap resources under root domain (exclude redirect cases)
+            if ((not all_resource) and (domainn != url_root_domain)):
                 continue
             #If --filetype is specified, get the file type from the HTTP request/response for the URL
             if ( (filetype_str.find(filetype) == -1) and (filetype != "*")):
@@ -182,8 +181,17 @@ def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filet
             dismiss_alert(driver)
             if alert:
                 check_alerts(driver)
+            #In case of redirect, check the current URL of driver
             src = driver.page_source
-            file_path = urlparse(url).path
+            url_now = driver.current_url
+            domain = extract_root_domain(url_now)
+
+            #Check if redirect occured
+            if (url != url_now):
+                print("Redirect has occured: " + url + " -> " + url_now)
+
+
+            file_path = urlparse(url_now).path
             file_name = os.path.basename(file_path)
             only_path = file_path.replace(file_name, '')
             domain_path = domain + only_path
@@ -236,7 +244,7 @@ def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filet
                 f.write(src)
                 f.close()
                 if logs:
-                    print("Saved " + url + " in " + full_path)
+                    print("Saved " + url_now + " in " + full_path)
             
     except Exception as e:
         print(e)
