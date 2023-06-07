@@ -18,7 +18,7 @@ python3 grim-scraper.py --url https://github.com/login
 ```
 usage: grim-scraper.py [-h] --url URL [--filetype FILETYPE] [--useragent USERAGENT] [--time TIME]
                        [--status STATUS] [--proxy PROXY] [--proxycred PROXYCRED] [-headless] [-log]
-                       [-all] [-alert]
+                       [-all] [-alert] [-login]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -37,6 +37,7 @@ optional arguments:
   -log                  Output logs
   -all                  Save all resources found in HTTP request/response
   -alert                Accept pop up alert
+  -login                Attempt login using dummy email and password
 ```
 
 **Use URLs from a file (Use `--url` option, and specify the list file name)**
@@ -90,6 +91,11 @@ python3 grim-scraper.py --url https://github.com/login -all
 ```
 python3 grim-scraper.py --url https://github.com/login -alert
 ```
+**Emulate a user login (`-login` flag)::**
+```
+python3 grim-scraper.py --url https://github.com/login -login
+```
+A screenshot will be taken before and afer the login.
 
 ## Example output with `-log` option enabled:
 

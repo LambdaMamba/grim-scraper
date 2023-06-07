@@ -18,6 +18,8 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
+
 
 def check_alerts(driver):
     try:
@@ -105,9 +107,12 @@ def initialize_driver(headless_mode, useragent, root_domain, proxy, proxycred):
         print("Error initializing driver...")
         return False, False
 
-def take_screenshot(driver, url, root_domain):
+def take_screenshot(driver, url, root_domain, num):
     #Take screenshot and save it in /root_domain/screenshot.png
-    screenshot_loc = root_domain+"/screenshot.png"
+    if num == 0:
+        screenshot_loc = root_domain+"/screenshot.png"
+    else:
+        screenshot_loc = root_domain+"/screenshot"+str(num)+".png"
     driver.save_screenshot(screenshot_loc)
     print("Saved screenshot of " +url+" in " + screenshot_loc)
 
@@ -269,6 +274,7 @@ def check_args():
     parser.add_argument('-log', action='store_true', help="Output logs")
     parser.add_argument('-all', action='store_true', help="Save all resources found in HTTP request/response")
     parser.add_argument('-alert', action='store_true', help="Accept pop up alert")
+    parser.add_argument('-login', action='store_true', help="Attempt login using dummy email and password")
     args = parser.parse_args()
     url = args.url
 
@@ -362,8 +368,14 @@ def check_args():
     else:
         alert = False
 
+    if args.login:
+        login = True
+        print("Will attempt to login using a dummy email and password...")
+    else:
+        login = False
 
-    return url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred
+
+    return url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login
 
 
 
@@ -408,8 +420,36 @@ def read_txt(filename):
     return url_txt
 
 
+def attempt_login(driver):
+    try:
+        time.sleep(2)
+        #Attempt all these Elements for username field
+        user_list = ["input[type='text']", "input[name='email']", "input[name='username']", "input[name='user']"]
+        for text in user_list:
+            res = key_send(driver, text)
+            if res:
+                print("Successfully inputted fake login credentials...")
+                return True
+        print("Failed to input fake login credentials...")
+        return False
+    except Exception as e:
+        print("Failed to input fake login credentials...")
+        return False
 
-def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred):
+
+def key_send(driver, username):
+    try:
+        user_field = driver.find_element(By.CSS_SELECTOR, username)
+        user_field.send_keys("john@randommail.com")
+        time.sleep(0.5)
+        password_field = driver.find_element(By.CSS_SELECTOR, "input[type='password']")
+        password_field.send_keys("RandomPassword")
+        password_field.send_keys(Keys.ENTER)
+        return True
+    except Exception as e:
+        return False
+
+def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login):
     try:
         root_domain = extract_root_domain(url)
         url_root_domain = root_domain
@@ -448,11 +488,24 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
             return False
         
         else:
+            num = 0
             #If -alert is enabled, check for Javascript popup alert and accept
             if alert:
                 check_alerts(driver)
 
-            take_screenshot(driver, url, root_domain)
+            url1 = driver.current_url
+
+            take_screenshot(driver, url, root_domain, num)
+            if login:
+                #Check behavior of site if attempting fake login using dummy email and password
+                num = num + 1
+                logged = attempt_login(driver)
+                url2 = driver.current_url
+                if logged:
+                    #Take screenshot after fake login
+                    take_screenshot(driver, url, root_domain, num)
+                else:
+                    print("Failed dummy login...")
 
             urls, urls_filetype = http_responses(driver, url, root_domain, logs)
 
@@ -473,14 +526,14 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
 
 def main():
     try:
-        url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred = check_args()
+        url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login = check_args()
 
         if txt:
             url_txt = []
             url_txt = read_txt(url)
             #If reading URLs from a file, perform the scraping for each URL
             for urll in url_txt:
-                success = grim(urll, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred)
+                success = grim(urll, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login)
                 if success:
                     print("Success for " + urll)
                 else:
@@ -488,7 +541,7 @@ def main():
 
         else:
             #If only a single URL is provided, perform scraping once
-            success = grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred)
+            success = grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login)
             if success:
                 print("Success for " + url)
             else:
