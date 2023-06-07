@@ -91,7 +91,6 @@ python3 grim-scraper.py --url https://github.com/login -all
 python3 grim-scraper.py --url https://github.com/login -alert
 ```
 
-
 ## Example output with `-log` option enabled:
 
 ```
@@ -116,4 +115,45 @@ Saved https://github.githubassets.com/assets/dark-3946c959759a.css in github.com
 Saved https://github.githubassets.com/assets/github-c7a3a0ac71d4.css in github.com/githubassets.com/assets/github-c7a3a0ac71d4.css
 Saved https://github.githubassets.com/assets/primer-0e3420bbec16.css in github.com/githubassets.com/assets/primer-0e3420bbec16.css
 ...
+```
+
+# The Grim Seeker
+
+Find interesting things inside an file. Currently searches for:
+- href links
+- References to .php
+- References to .apk
+- References to email addresses (Use the `-email` flag)
+- Base64 encoded string, and will decode
+- Unescaped and percent encoded string, and will decode
+
+## Example usage (specify the file using `--file`):
+```
+python3 seeker.py --file index
+```
+**Example Output (with `-email` flag enabled):**
+```
+Links found inside index from 'href':
+http://test-random.test/APP/
+http://test-random2.test/AAA/
+http://test-random.test/APP/mal.apk
+random.html
+
+PHP endpoint found inside index: https://test-random.test/cred.php
+
+APK found inside index: http://test-random.test/APP/mal.apk
+
+Email found inside index: person@random.com
+Email found inside index: person2@random.com
+
+Found a possible Base 64 string: aHR0cHM6Ly90ZXN0LXJhbmRvbTEyMy50ZXN0L2NyZWQucGhw
+Decoded from Base64: https://test-random123.test/cred.php
+
+unescape() detected inside index
+The unescaped and percent decoded text: 
+ '<!DOCTYPE HTML><html><head>
+    <script>
+...
+...
+function(){$("#login-passwd").keydown(function(){$(this).hasClass("has-error")&&($("#passwordError").addClass("hme"),$("#login-passwd").removeClass("has-error"))})};</script></div></body></html>
 ```

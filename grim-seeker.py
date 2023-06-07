@@ -58,6 +58,14 @@ def apk(file_name, page_string, words):
                     for wor in match:
                         print("APK found inside " +file_name+": " + wor)
 
+def email_addr(file_name, page_string, words):
+    #This takes time to match, so only do if --email option is enabled
+    match = re.findall(r"(?i)[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?", page_string)
+    if match:
+        for wor in match:
+            print("Email found inside " +file_name+": " + wor)
+
+
 def b64(file_name, page_string, words):
     #Use regex to search for Base64 encoded strings
     if words:
@@ -96,7 +104,7 @@ def unesc(file_name, page_string):
             percentdec = urllib.parse.unquote(unescaped)
             print("The unescaped and percent decoded text: \n"+percentdec)
 
-def seek(file_name):
+def seek(file_name, email):
     try:
         #print("********* Running grim-seeker *********")
         dq_list = []
@@ -109,10 +117,17 @@ def seek(file_name):
         sq_list = singlequote(file_name, page_string)
         words = dq_list + sq_list
         href(file_name, page_string)
-        unesc(file_name, page_string)
+        print()
         php(file_name, page_string, words)
+        print()
         apk(file_name, page_string, words)
+        print()
+        if email:
+            email_addr(file_name, page_string, words)
+            print()
         b64(file_name, page_string, words)
+        print()
+        unesc(file_name, page_string)
 
     except Exception as e:
         print(e)
@@ -122,8 +137,9 @@ def seek(file_name):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--file', required=True, help="Specify the filename")
+    parser.add_argument('-email', action='store_true', help="To find email addresses inside file")
     args = parser.parse_args()
-    seek(args.file)
+    seek(args.file, args.email)
 
 
 main()
