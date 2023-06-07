@@ -424,7 +424,7 @@ def attempt_login(driver):
     try:
         time.sleep(2)
         #Attempt all these Elements for username field
-        user_list = ["input[type='text']", "input[name='email']", "input[name='username']", "input[name='user']"]
+        user_list = ["input[type='text']", "input[type='email']", "input[name='email']", "input[name='username']", "input[name='user']", "input[name='id']", "input[name='name']"]
         for text in user_list:
             res = key_send(driver, text)
             if res:
