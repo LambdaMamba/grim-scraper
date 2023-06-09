@@ -19,6 +19,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
+import importlib  
+from bs4 import BeautifulSoup
 
 
 def check_alerts(driver):
@@ -112,7 +114,7 @@ def take_screenshot(driver, url, root_domain, num):
     if num == 0:
         screenshot_loc = root_domain+"/screenshot.png"
     else:
-        screenshot_loc = root_domain+"/screenshot"+str(num)+".png"
+        screenshot_loc = root_domain+"/screenshot_"+str(num)+".png"
     driver.save_screenshot(screenshot_loc)
     print("Saved screenshot of " +url+" in " + screenshot_loc)
 
@@ -165,11 +167,92 @@ def save_to_csv(url, status_code, content_type):
     data = [url, status_code]
     
 
+def href_find(file_name, page_string):
+    links = []
+    soup = BeautifulSoup(page_string, "html.parser")
+    print("Links found inside " +file_name+" from 'href':")
+    for link in soup.findAll('a'):
+        url = link.get('href')
+        print(url)
+        links.append(url)
+    return links
 
-def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filetype, alert, download_dir, wait_time, root_domain):
+
+def file_utils(url_now, domain, root_domain, download_dir, src, logs, i, j):
+    try:
+        file_path = urlparse(url_now).path
+        file_name = os.path.basename(file_path)
+        only_path = file_path.replace(file_name, '')
+        domain_path = domain + only_path
+        #If file has no name, name it as "index"
+        if file_name == "":
+            file_name = "index"
+
+        scrape_dir = root_domain +"/"+ domain_path
+
+        
+        #Truncate if file name is too long. Take first 10 and last 10 characters, and concatanate with _ between
+        if len(file_name) > 250:
+            file_name = file_name[0:10]+"_"+file_name[-10:]
+            if logs:
+                print("File name too long, changed name to "+ file_name)
+        
+
+        #Check if directory exists, if not make one
+        if not os.path.isdir(scrape_dir):
+            try:
+                Path(scrape_dir).mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                #Cannot make dir if a same filename exists, so rename the directory
+                temp = scrape_dir[:-1]
+                scrape_dir = temp +"_"+str(j)+"/"
+                Path(scrape_dir).mkdir(parents=True, exist_ok=True)
+            if logs:
+                print("Made directory "+scrape_dir)
+            time.sleep(0.5)
+        else:
+            if logs:
+                print(scrape_dir + " directory exists, continuing in that directory...")
+
+        full_path = scrape_dir + file_name
+
+        #Check if file exists, if yes rename the file
+        if os.path.isfile(full_path):
+            new_path = scrape_dir + str(i)+"_"+file_name
+            i=i+1
+            if logs:
+                print(full_path + " exists, renaming to " +new_path)
+            full_path = new_path
+
+        downloaded = download_dir+"/"+file_name
+        f = open(full_path, "w")
+        f.write(src)
+        f.close()
+        if logs:
+            print("Saved " + url_now + " in " + full_path)
+        #Check if file is inside /root_domain/downloads. If yes move to the proper directory
+        # if os.path.isfile(downloaded):
+        #     os.rename(downloaded, full_path)
+        #     print(file_name + " exists in " +downloaded+ ", moved to "+ full_path)
+        # else: 
+        #     f = open(full_path, "w")
+        #     f.write(src)
+        #     f.close()
+        #     if logs:
+        #         print("Saved " + url_now + " in " + full_path)
+
+        return True
+    except Exception as e:
+        print(e)
+        print("Error with files...")
+        return False
+    
+
+def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filetype, alert, download_dir, wait_time, root_domain, main_url, href):
     #Reap the resources
     print("Saving the resources...")
     try:
+        main_index = ""
         for url in urls:
             i=0
             j=0
@@ -181,6 +264,7 @@ def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filet
             #If --filetype is specified, get the file type from the HTTP request/response for the URL
             if ( (filetype_str.find(filetype) == -1) and (filetype != "*")):
                 continue
+
             driver.set_page_load_timeout(wait_time)
             driver.get(url)
             dismiss_alert(driver)
@@ -191,72 +275,48 @@ def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filet
             url_now = driver.current_url
             domain = extract_root_domain(url_now)
 
+            #Save main index src
+            if (main_url == url) or (main_url+"/" == url):
+                main_index = src
+
             #Check if redirect occured
             if (url != url_now):
                 print("Redirect has occured: " + url + " -> " + url_now)
 
+            result = file_utils(url_now, domain, root_domain, download_dir, src, logs, i, j)
+        
+        if (href):
+            links = href_find(main_url, main_index)
+            for link in links:
+                i=0
+                j=0
+                #Check if full link is inside href
+                if not (main_url.lower().strip("/") in link.lower()):
+                    if not ("http" in link.lower()):
+                        link = main_url.strip("/")+"/"+link.lower().strip("/")
 
-            file_path = urlparse(url_now).path
-            file_name = os.path.basename(file_path)
-            only_path = file_path.replace(file_name, '')
-            domain_path = domain + only_path
-            #If file has no name, name it as "index"
-            if file_name == "":
-                file_name = "index"
-
-            scrape_dir = root_domain +"/"+ domain_path
-            
-            #Truncate if file name is too long. Take first 10 and last 10 characters, and concatanate with _ between
-            if len(file_name) > 250:
-                file_name = file_name[0:10]+"_"+file_name[-10:]
-                if logs:
-                    print("File name too long, changed name to "+ file_name)
-            
-
-            #Check if directory exists, if not make one
-            if not os.path.isdir(scrape_dir):
-                try:
-                    Path(scrape_dir).mkdir(parents=True, exist_ok=True)
-                except OSError as e:
-                    #Cannot make dir if a same filename exists, so rename the directory
-                    temp = scrape_dir[:-1]
-                    scrape_dir = temp +"_"+str(j)+"/"
-                    Path(scrape_dir).mkdir(parents=True, exist_ok=True)
-                if logs:
-                    print("Made directory "+scrape_dir)
-                time.sleep(0.5)
-            else:
-                if logs:
-                    print(scrape_dir + " directory exists, continuing in that directory...")
-
-            full_path = scrape_dir + file_name
-
-            #Check if file exists, if yes rename the file
-            if os.path.isfile(full_path):
-                new_path = scrape_dir + str(i)+"_"+file_name
-                i=i+1
-                if logs:
-                    print(full_path + " exists, renaming to " +new_path)
-                full_path = new_path
-
-            downloaded = download_dir+"/"+file_name
-            #Check if file is inside /root_domain/downloads. If yes move to the proper directory
-            if os.path.isfile(downloaded):
-                os.rename(downloaded, full_path)
-                print(file_name + " exists in " +downloaded+ ", moved to "+ full_path)
-            else: 
-                f = open(full_path, "w")
-                f.write(src)
-                f.close()
-                if logs:
-                    print("Saved " + url_now + " in " + full_path)
+                print("Going to " +link+"...")
+                driver.set_page_load_timeout(wait_time)
+                driver.get(link)
+                dismiss_alert(driver)
+                if alert:
+                    check_alerts(driver)
+                #Take screenshot of href
+                take_screenshot(driver, link, root_domain, urlparse(link).path.strip("/").strip("..").strip("../"))
+                #In case of redirect, check the current URL of driver
+                src = driver.page_source
+                url_now = driver.current_url
+                domain = extract_root_domain(url_now)
+                result = file_utils(url_now, domain, root_domain, download_dir, src, logs, i, j)
+        print("Saved the resources successfully in "+ root_domain)
+        return True
             
     except Exception as e:
         print(e)
         print("Error saving the resources... exiting...")
-        sys.exit()
+        return False
+        
 
-    print("Saved the resources successfully in "+ root_domain)
 
 
 
@@ -275,6 +335,7 @@ def check_args():
     parser.add_argument('-all', action='store_true', help="Save all resources found in HTTP request/response")
     parser.add_argument('-alert', action='store_true', help="Accept pop up alert")
     parser.add_argument('-login', action='store_true', help="Attempt login using dummy email and password")
+    parser.add_argument('-href', action='store_true', help="Scrape all href links from main page and take screenshot")
     args = parser.parse_args()
     url = args.url
 
@@ -374,8 +435,15 @@ def check_args():
     else:
         login = False
 
+    if args.href:
+        href = True
+        print("Will scrape all links found inside HREF inside index...")
+    else:
+        href = False
 
-    return url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login
+
+
+    return url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login, href
 
 
 
@@ -449,7 +517,7 @@ def key_send(driver, username):
     except Exception as e:
         return False
 
-def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login):
+def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login, href):
     try:
         root_domain = extract_root_domain(url)
         url_root_domain = root_domain
@@ -509,7 +577,11 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
 
             urls, urls_filetype = http_responses(driver, url, root_domain, logs)
 
-            reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filetype, alert, download_dir, wait_time, root_domain)
+            result = reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filetype, alert, download_dir, wait_time, root_domain, url, href)
+
+            if not result:
+                driver.close()
+                return False
 
             driver.close()
             return True
@@ -526,14 +598,14 @@ def grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wai
 
 def main():
     try:
-        url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login = check_args()
+        url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login, href = check_args()
 
         if txt:
             url_txt = []
             url_txt = read_txt(url)
             #If reading URLs from a file, perform the scraping for each URL
             for urll in url_txt:
-                success = grim(urll, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login)
+                success = grim(urll, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login, href)
                 if success:
                     print("Success for " + urll)
                 else:
@@ -541,7 +613,7 @@ def main():
 
         else:
             #If only a single URL is provided, perform scraping once
-            success = grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login)
+            success = grim(url, filetype, useragent, headless_mode, logs, all_resource, alert, wait_time, txt, statuscode, proxy, proxycred, login, href)
             if success:
                 print("Success for " + url)
             else:

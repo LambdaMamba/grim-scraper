@@ -15,6 +15,7 @@ def href(file_name, page_string):
     for link in soup.findAll('a'):
         links = link.get('href')
         print(links)
+    return links
 
 def doublequote(file_name, page_string):
     dq_list = []
@@ -116,7 +117,7 @@ def seek(file_name, email):
         dq_list = doublequote(file_name, page_string)
         sq_list = singlequote(file_name, page_string)
         words = dq_list + sq_list
-        href(file_name, page_string)
+        links = href(file_name, page_string)
         print()
         php(file_name, page_string, words)
         print()

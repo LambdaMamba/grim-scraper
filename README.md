@@ -18,7 +18,7 @@ python3 grim-scraper.py --url https://github.com/login
 ```
 usage: grim-scraper.py [-h] --url URL [--filetype FILETYPE] [--useragent USERAGENT] [--time TIME]
                        [--status STATUS] [--proxy PROXY] [--proxycred PROXYCRED] [-headless] [-log]
-                       [-all] [-alert] [-login]
+                       [-all] [-alert] [-login] [-href]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -38,6 +38,7 @@ optional arguments:
   -all                  Save all resources found in HTTP request/response
   -alert                Accept pop up alert
   -login                Attempt login using dummy email and password
+  -href                 Scrape all href links from main page and take screenshot
 ```
 
 **Use URLs from a file (Use `--url` option, and specify the list file name)**
@@ -96,6 +97,12 @@ python3 grim-scraper.py --url https://github.com/login -alert
 python3 grim-scraper.py --url https://github.com/login -login
 ```
 A screenshot will be taken before and afer the login.
+
+**Scrape href links (`-href` flag)::**
+```
+python3 grim-scraper.py --url https://github.com/login -href
+```
+It will scrape all href links inside the main page, and will take a screenshot.
 
 ## Example output with `-log` option enabled:
 
