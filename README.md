@@ -1,17 +1,17 @@
 # The Grim Scraper
 
-A Selenium Python Scraper for Scraping websites, and downloading their resources.
+A Selenium scraper for scraping websites, checking HTTP requests/responses, saving the resources, emulating logins, taking screenshots and finding interesting things inside the source code.
 
 ## Example usage:
 ```
 python3 grim-scraper.py --url https://github.com/login
 ```
 
-- First, it will visit `https://github.com/login` using Selenium, and a screenshot of the site will be saved in `github.com/screenshot.png`.
+- It will visit `https://github.com/login` using Selenium, and a screenshot of the site will be saved in `github.com/screenshot.png`.
 
-- Second, it will check the HTTP requests and responses, and will save the `URL HTTP-Status-Code Content-Type` information in `github.com/http_responses.csv`.
+- It will check the HTTP requests and responses, and will save the `URL HTTP-Status-Code Content-Type` information in `github.com/http_responses.csv`.
 
-- Third, it will visit the URLs found in the HTTP requests and responses. The source codes will be saved in their respective folders and file names.
+- It will visit the URLs found in the HTTP requests and responses. The source codes will be saved in their respective folders and file names.
 
 ## Arguments, options and flags:
 
