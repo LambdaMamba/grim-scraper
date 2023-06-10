@@ -114,6 +114,7 @@ def take_screenshot(driver, url, root_domain, num):
     if num == 0:
         screenshot_loc = root_domain+"/screenshot.png"
     else:
+        num = num.replace("/", "-" )
         screenshot_loc = root_domain+"/screenshot_"+str(num)+".png"
     driver.save_screenshot(screenshot_loc)
     print("Saved screenshot of " +url+" in " + screenshot_loc)
