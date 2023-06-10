@@ -21,6 +21,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 import importlib  
 from bs4 import BeautifulSoup
+import urllib.request
 
 
 def check_alerts(driver):
@@ -114,7 +115,7 @@ def take_screenshot(driver, url, root_domain, num):
     if num == 0:
         screenshot_loc = root_domain+"/screenshot.png"
     else:
-        num = num.replace("/", "-" )
+        num = str(num).replace("/", "-" )
         screenshot_loc = root_domain+"/screenshot_"+str(num)+".png"
     driver.save_screenshot(screenshot_loc)
     print("Saved screenshot of " +url+" in " + screenshot_loc)
@@ -179,7 +180,7 @@ def href_find(file_name, page_string):
     return links
 
 
-def file_utils(url_now, domain, root_domain, download_dir, src, logs, i, j):
+def file_utils(url_now, domain, root_domain, download_dir, src, logs, i, j, driver, filetype_str):
     try:
         file_path = urlparse(url_now).path
         file_name = os.path.basename(file_path)
@@ -226,21 +227,26 @@ def file_utils(url_now, domain, root_domain, download_dir, src, logs, i, j):
             full_path = new_path
 
         downloaded = download_dir+"/"+file_name
-        f = open(full_path, "w")
-        f.write(src)
-        f.close()
+        # f = open(full_path, "w")
+        # f.write(src)
+        # f.close()
         if logs:
             print("Saved " + url_now + " in " + full_path)
         #Check if file is inside /root_domain/downloads. If yes move to the proper directory
-        # if os.path.isfile(downloaded):
-        #     os.rename(downloaded, full_path)
-        #     print(file_name + " exists in " +downloaded+ ", moved to "+ full_path)
-        # else: 
-        #     f = open(full_path, "w")
-        #     f.write(src)
-        #     f.close()
-        #     if logs:
-        #         print("Saved " + url_now + " in " + full_path)
+        if os.path.isfile(downloaded):
+            os.rename(downloaded, full_path)
+            print(file_name + " exists in " +downloaded+ ", moved to "+ full_path)    
+        #If file type is image, download image instead of the browser source code
+        elif "image" in filetype_str:
+            img = save_image(driver, full_path)
+            if logs:
+                print("Saved image " + url_now + " in " + full_path)
+        else: 
+            f = open(full_path, "w")
+            f.write(src)
+            f.close()
+            if logs:
+                print("Saved " + url_now + " in " + full_path)
 
         return True
     except Exception as e:
@@ -248,6 +254,17 @@ def file_utils(url_now, domain, root_domain, download_dir, src, logs, i, j):
         print("Error with files...")
         return False
     
+    
+def save_image(driver, path):
+    try:
+        images = driver.find_element(By.TAG_NAME,'img')
+        src = images.get_attribute('src')
+        urllib.request.urlretrieve(src, path)
+        return True
+    except Exception as e:
+        print(e)
+        print("Error saving image...")
+        return False
 
 def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filetype, alert, download_dir, wait_time, root_domain, main_url, href):
     #Reap the resources
@@ -268,23 +285,25 @@ def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filet
 
             driver.set_page_load_timeout(wait_time)
             driver.get(url)
+            url_now = url
             dismiss_alert(driver)
             if alert:
                 check_alerts(driver)
-            #In case of redirect, check the current URL of driver
             src = driver.page_source
-            url_now = driver.current_url
-            domain = extract_root_domain(url_now)
+            #In case of redirect, check the current URL of driver. Don't check unless HTML or Javascript
+            if ("html" in filetype_str) or ("javascript" in filetype_str):
+                url_now = driver.current_url
+                domain = extract_root_domain(url_now)
+                #Check if redirect occured
+                if (url != url_now):
+                    print("Redirect has occured: " + url + " -> " + url_now)
 
             #Save main index src
             if (main_url == url) or (main_url+"/" == url):
                 main_index = src
 
-            #Check if redirect occured
-            if (url != url_now):
-                print("Redirect has occured: " + url + " -> " + url_now)
 
-            result = file_utils(url_now, domain, root_domain, download_dir, src, logs, i, j)
+            result = file_utils(url_now, domain, root_domain, download_dir, src, logs, i, j, driver, filetype_str)
         
         if (href):
             links = href_find(main_url, main_index)
@@ -308,7 +327,7 @@ def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filet
                 src = driver.page_source
                 url_now = driver.current_url
                 domain = extract_root_domain(url_now)
-                result = file_utils(url_now, domain, root_domain, download_dir, src, logs, i, j)
+                result = file_utils(url_now, domain, root_domain, download_dir, src, logs, i, j, driver, filetype_str)
         print("Saved the resources successfully in "+ root_domain)
         return True
             
