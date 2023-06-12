@@ -311,6 +311,10 @@ def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filet
             for link in links:
                 i=0
                 j=0
+                #Check if NoneType
+                if link is None:
+                    print("NoneType, skipping...")
+                    return False
                 #Check if full link is inside href
                 if not (main_url.lower().strip("/") in link.lower()):
                     if not ("http" in link.lower()):
