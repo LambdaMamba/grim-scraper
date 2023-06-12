@@ -275,6 +275,7 @@ def reap(driver, urls, url_root_domain, logs, all_resource, urls_filetype, filet
             i=0
             j=0
             domainn = extract_root_domain(url)
+            domain = domainn
             filetype_str = str(urls_filetype[url])
             #If -all not enabled, only reap resources under root domain (exclude redirect cases)
             if ((not all_resource) and (domainn != url_root_domain)):
